@@ -46,7 +46,7 @@ if (!OPENAI_API_KEY) {
 const app = express()
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
 app.use(bodyParser.urlencoded({ extended: true }))
-const client = twilio(ACCOUNT_SID, AUTH_TOKEN)
+// const client = twilio(ACCOUNT_SID, AUTH_TOKEN)
 
 // serve static files at /assets so Twilio can get the greeting mp3
 app.use('/assets', express.static('assets'))
@@ -57,7 +57,7 @@ if (!fs.existsSync(recordingsDir)) {
 }
 
 // Receive incoming voice call
-app.post('/', (req, res) => {
+app.post('/', (req: Request, res: Response) => {
 	console.log('Incoming call:', req.body)
 	const body = req.body
 	const twiml = new twilio.twiml.VoiceResponse()

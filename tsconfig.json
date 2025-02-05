@@ -15,9 +15,7 @@
 		"rootDir": ".",
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./*.ts"],
-			"@/module/*": ["src/module/*.ts"],
-			"@/core/*": ["src/core/*.ts"]
+			"@/*": ["./src/*"]
 		}
 	},
 	"$schema": "https://json.schemastore.org/tsconfig",

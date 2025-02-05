@@ -1,25 +1,20 @@
 {
-	"name": "mgmt",
+	"name": "hotline",
 	"version": "1.0.0",
 	"description": "Discord management automation",
-	"main": "build/index.js",
+	"main": "build/server.js",
 	"scripts": {
 		"build:compile": "tsc",
-		"build:clean": "rimraf build",
-		"build:eslint": "eslint build/** --quiet --fix",
-		"build:prettier": "prettier build/** --log-level error --ignore-unknown --write",
+		"build:clean": "rimraf dist",
+		"build:eslint": "eslint dist/** --quiet --fix",
+		"build:prettier": "prettier dist/** --log-level error --ignore-unknown --write",
 		"build": "npm run build:clean && npm run build:compile && npm run build:eslint && npm run build:prettier",
-		"debug": "tsx --watch --inspect-brk src/index.ts",
-		"dev": "tsx --watch src/index.ts"
+		"debug": "tsx --watch --inspect-brk src/server.ts",
+		"dev": "tsx --watch src/server.ts"
 	},
 	"author": "",
 	"license": "ISC",
 	"type": "module",
-	"imports": {
-		"#*": "./build/*.js",
-		"#module/*": "./build/src/module/*.js",
-		"#core/*": "./build/src/core/*.js"
-	},
 	"dependencies": {
 		"axios": "^1.7.9",
 		"body-parser": "^1.20.3",
@@ -37,6 +32,7 @@
 		"@typescript-eslint/parser": "^6.13.1",
 		"eslint": "^8.54.0",
 		"eslint-config-prettier": "^9.0.0",
+		"eslint-plugin-import": "^2.31.0",
 		"prettier": "^3.1.0",
 		"rimraf": "^5.0.5",
 		"tsx": "^4.6.1",
