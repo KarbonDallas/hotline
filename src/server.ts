@@ -61,7 +61,9 @@ app.post('/', (req: Request, res: Response) => {
 	console.log('Incoming call:', req.body)
 	const body = req.body
 	const twiml = new twilio.twiml.VoiceResponse()
-	twiml.play(`https://${SERVER_HOST}:${SERVER_PORT}/assets/short.mp3`)
+	twiml.play(
+		`https://${SERVER_HOST}:${SERVER_PORT}/assets/hotline-welcome.mp3`,
+	)
 	twiml.record({
 		maxLength: 60 * 5,
 		action: '/recording',
