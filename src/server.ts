@@ -230,6 +230,6 @@ async function downloadRecording({ body }: Request) {
 }
 
 // listen on 3001
-app.listen(3001, () => {
-	console.log('Listening on port 3001')
+app.listen(SERVER_PORT, () => {
+	console.log(`Server running on http://${SERVER_HOST}:${SERVER_PORT}`)
 })
