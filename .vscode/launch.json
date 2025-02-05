@@ -1,0 +1,34 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Attach Debugger to Application",
+			"request": "attach",
+			"type": "node",
+			"port": 9229,
+			"sourceMaps": true,
+			"skipFiles": [
+				"<node_internals>/**",
+				"${workspaceFolder}/node_modules/**"
+			],
+			"localRoot": "${workspaceFolder}",
+			"outFiles": [
+				"${workspaceFolder}/build/**/*.js",
+				"!**/node_modules/**"
+			]
+		},
+		{
+			"name": "Start Debugger on Current File",
+			"request": "launch",
+			"type": "node",
+			"program": "${file}",
+			"runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"skipFiles": [
+				"<node_internals>/**",
+				"${workplaceFolder}/node_modules/**"
+			]
+		}
+	]
+}
