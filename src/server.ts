@@ -49,8 +49,8 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
 app.use(bodyParser.urlencoded({ extended: true }))
 
 const sslOptions = {
-	key: fs.readFileSync('/etc/letsencrypt/live/akasha.live/privkey.pem'),
-	cert: fs.readFileSync('/etc/letsencrypt/live/akasha.live/fullchain.pem'),
+	key: fs.readFileSync(path.join(process.cwd(), 'ssl', 'privkey.pem')),
+	cert: fs.readFileSync(path.join(process.cwd(), 'ssl', 'fullchain.pem')),
 }
 
 // serve static files at /assets so Twilio can get the greeting mp3
