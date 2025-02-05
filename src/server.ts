@@ -3,6 +3,7 @@ import 'dotenv/config'
 import fs from 'fs'
 import path from 'path'
 import axios from 'axios'
+import https from 'https'
 import twilio from 'twilio'
 import express from 'express'
 import { Request, Response } from 'express'
@@ -46,7 +47,11 @@ if (!OPENAI_API_KEY) {
 const app = express()
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
 app.use(bodyParser.urlencoded({ extended: true }))
-// const client = twilio(ACCOUNT_SID, AUTH_TOKEN)
+
+const sslOptions = {
+	key: fs.readFileSync('/etc/letsencrypt/live/akasha.live/privkey.pem'),
+	cert: fs.readFileSync('/etc/letsencrypt/live/akasha.live/fullchain.pem'),
+}
 
 // serve static files at /assets so Twilio can get the greeting mp3
 app.use('/assets', express.static('assets'))
@@ -229,7 +234,7 @@ async function downloadRecording({ body }: Request) {
 	}
 }
 
-// listen on 3001
-app.listen(SERVER_PORT, () => {
-	console.log(`Server running on http://${SERVER_HOST}:${SERVER_PORT}`)
+// listen on 3001 with SSL
+https.createServer(sslOptions, app).listen(SERVER_PORT, () => {
+	console.log(`Server listening on https://${SERVER_HOST}:${SERVER_PORT}`)
 })
