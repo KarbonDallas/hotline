@@ -30,6 +30,22 @@ We use OpenAI's whisper model to generate the transcription of the recording. It
 
 We make use of two separate webhooks: the first one posts incoming call data as soon as someone calls, and the second one posts a link to the audio recording along with the transcription. Both make use of Discord embeds for readability && convenience!
 
+## Installation
+
+1. Clone this repository
+1. Run `npm install`
+
+## Development
+
+1. Run `npm run dev`
+
+## Deployment
+
+1. Run `npm run build`
+1. Run `node dist/src/server.ts`
+
+Consider using a process manager such as [pm2](https://www.npmjs.com/package/pm2) for production!
+
 ## Configuration
 
 We have provided a `.env.example` file that contains all of the parameters you need to specify for operation. Here's a brief explanation:
