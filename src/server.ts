@@ -1,74 +1,100 @@
-import 'dotenv/config'
-
 import fs from 'fs'
+import 'dotenv/config'
 import path from 'path'
 import axios from 'axios'
 import https from 'https'
 import twilio from 'twilio'
-import express from 'express'
-import { Request, Response } from 'express'
-import bodyParser from 'body-parser'
 import OpenAI from 'openai'
+import express from 'express'
+import bodyParser from 'body-parser'
+import { Request, Response } from 'express'
+import { publicAssetUrl, publicRecordingUrl } from './lib/util.js'
 
+/**
+ * Gather all of the environment variables
+ */
 const ACCOUNT_SID = process.env.ACCOUNT_SID ?? ''
 const AUTH_TOKEN = process.env.AUTH_TOKEN ?? ''
 const SERVER_HOST = process.env.SERVER_HOST ?? ''
 const SERVER_PORT = process.env.SERVER_PORT ?? ''
 const CALL_WEBHOOK = process.env.CALL_WEBHOOK ?? ''
-const CONFESSION_WEBHOOK = process.env.CONFESSION_WEBHOOK ?? ''
+const RECORDING_WEBHOOK = process.env.RECORDING_WEBHOOK ?? ''
 const NOTIFY_DISCORD = process.env.NOTIFY_DISCORD === 'true' ? true : false
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? ''
-
-// Exit if ACCOUNT_SID or AUTH_TOKEN is not set
+const GREETING_FILE = process.env.GREETING_FILE ?? ''
+const RECORDING_TITLE = process.env.RECORDING_TITLE ?? 'New Hotline Voicemail'
+const SSL_ENABLED = process.env.SSL_ENABLED === 'true' ? true : false
+/**
+ * Do a little bit of error checking
+ */
 if (!ACCOUNT_SID || !AUTH_TOKEN) {
-	console.error('ACCOUNT_SID and AUTH_TOKEN must be set')
+	console.error('Twilio: ACCOUNT_SID and AUTH_TOKEN must be set')
 	process.exit(1)
 }
-// Exit if SERVER_HOST or SERVER_PORT is not set
 if (!SERVER_HOST || !SERVER_PORT) {
-	console.error('SERVER_HOST and SERVER_PORT must be set')
+	console.error('Server: SERVER_HOST and SERVER_PORT must be set')
 	process.exit(1)
 }
-// Exit if CALL_WEBHOOK is not set
-if (!CALL_WEBHOOK) {
-	console.error('CALL_WEBHOOK must be set')
+if (!CALL_WEBHOOK || !RECORDING_WEBHOOK) {
+	console.error('Discord: CALL_WEBHOOK and RECORDING_WEBHOOK must be set')
 	process.exit(1)
 }
-// Exit if CONFESSION_WEBHOOK is not set
-if (!CONFESSION_WEBHOOK) {
-	console.error('CONFESSION_WEBHOOK must be set')
-	process.exit(1)
-}
-// Exit if OPENAI_API_KEY is not set
 if (!OPENAI_API_KEY) {
-	console.error('OPENAI_API_KEY must be set')
+	console.error('Transcription: OPENAI_API_KEY must be set')
 	process.exit(1)
 }
-const app = express()
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
-app.use(bodyParser.urlencoded({ extended: true }))
-
-const sslOptions = {
-	key: fs.readFileSync(path.join(process.cwd(), 'ssl', 'privkey.pem')),
-	cert: fs.readFileSync(path.join(process.cwd(), 'ssl', 'fullchain.pem')),
+if (!fs.existsSync(path.join(process.cwd(), 'assets', GREETING_FILE))) {
+	console.error(
+		'Greeting: GREETING_FILE specified was not found in assets directory',
+	)
+	process.exit(1)
 }
 
-// serve static files at /assets so Twilio can get the greeting mp3
+/**
+ * Check for SSL files if we're in production
+ */
+const privkeyPath = path.join(process.cwd(), 'ssl', 'privkey.pem')
+const fullchainPath = path.join(process.cwd(), 'ssl', 'fullchain.pem')
+if (process.env.NODE_ENV === 'production' && SSL_ENABLED) {
+	if (!fs.existsSync(privkeyPath) || !fs.existsSync(fullchainPath)) {
+		console.error(
+			`SSL: privkey.pem and fullchain.pem not found in ssl directory`,
+		)
+		process.exit(1)
+	}
+}
+
+/**
+ * Initialize and configure the Express server
+ */
+const app = express()
+app.use(bodyParser.urlencoded({ extended: true }))
 app.use('/assets', express.static('assets'))
-app.use('/confessions', express.static('confessions'))
-const recordingsDir = path.join(process.cwd(), 'confessions')
+app.use('/recordings', express.static('recordings'))
+
+/**
+ * Initialize the OpenAI Client
+ */
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
+
+/**
+ * Set up the recordings directory
+ */
+const recordingsDir = path.join(process.cwd(), 'recordings')
 if (!fs.existsSync(recordingsDir)) {
 	fs.mkdirSync(recordingsDir)
 }
 
-// Receive incoming voice call
+/**
+ * This is the main route that Twilio will hit when a call comes in
+ */
 app.post('/', (req: Request, res: Response) => {
 	console.log('Incoming call:', req.body)
 	const body = req.body
 	const twiml = new twilio.twiml.VoiceResponse()
-	twiml.play(
-		`https://${SERVER_HOST}:${SERVER_PORT}/assets/hotline-welcome.mp3`,
-	)
+	const greetingUrl = publicAssetUrl(GREETING_FILE)
+	console.log('Using greeting:', greetingUrl)
+	twiml.play(greetingUrl)
 	twiml.record({
 		maxLength: 60 * 5,
 		action: '/recording',
@@ -77,48 +103,42 @@ app.post('/', (req: Request, res: Response) => {
 	res.type('text/xml')
 	res.send(twiml.toString())
 	if (NOTIFY_DISCORD) {
-		const hookData = {
+		// We want to show the following fields in the Discord embed
+		const data = [
+			'Caller',
+			'CallerCity',
+			'CallerState',
+			'CallerZip',
+			'CallerCountry',
+		]
+		const labels = ['Caller', 'City', 'State', 'Zip', 'Country']
+		// Filter out any fields that are empty
+		const fields = data
+			.filter((key) => body[key])
+			.map((key) => {
+				return {
+					name: labels[data.indexOf(key)],
+					value: body[key],
+					inline: true,
+				}
+			})
+		void axios.post(CALL_WEBHOOK, {
 			embeds: [
 				{
 					title: `Call in Progress`,
-					fields: [
-						{
-							name: 'Number',
-							value: req.body.Caller,
-							inline: true,
-						},
-						{
-							name: 'City',
-							value: body.CallerCity,
-							inline: true,
-						},
-						{
-							name: 'State',
-							value: body.CallerState,
-							inline: true,
-						},
-						{
-							name: 'Zip',
-							value: body.CallerZip,
-							inline: true,
-						},
-						{
-							name: 'Country',
-							value: body.CallerCountry,
-							inline: true,
-						},
-					],
+					fields,
 					footer: {
 						text: body.CallSid,
 					},
 				},
 			],
-		}
-		void axios.post(CALL_WEBHOOK, hookData)
+		})
 	}
 })
 
-// Receive recordings from Twilio
+/**
+ * This route is hit when Twilio sends the recording information
+ */
 app.post('/recording', async (req: Request, res: Response) => {
 	console.log('Recording:', req.body)
 	try {
@@ -148,11 +168,10 @@ app.post('/recording', async (req: Request, res: Response) => {
 		res.status(500).send('Failed to save recording')
 	}
 })
-app.post('/transcription', (req: Request, res: Response) => {
-	console.log('Transcription:', req.body)
-	res.status(200).send('Transcription saved')
-})
 
+/**
+ * This function downloads the recording and sends it to Discord
+ */
 async function downloadRecording({ body }: Request) {
 	const recordingUrl = body.RecordingUrl
 	const recordingSid = body.RecordingSid
@@ -173,58 +192,39 @@ async function downloadRecording({ body }: Request) {
 			file: fs.createReadStream(filePath),
 			model: 'whisper-1',
 		})
-		let url
-		if (SERVER_PORT !== '80') {
-			url = `https://${SERVER_HOST}:${SERVER_PORT}/confessions/${recordingSid}.mp3`
-		} else {
-			url = `https://${SERVER_HOST}/confessions/${recordingSid}.mp3`
-		}
-		void axios.post(CONFESSION_WEBHOOK, {
+		const url = publicRecordingUrl(`${recordingSid}.mp3`)
+		// We want to show the following fields in the Discord embed
+		const data = [
+			'Caller',
+			'CallerCity',
+			'CallerState',
+			'CallerZip',
+			'CallerCountry',
+			'RecordingDuration',
+		]
+		const labels = ['Caller', 'City', 'State', 'Zip', 'Country', 'Duration']
+		// Filter out any fields that are empty
+		const fields = data
+			.filter((key) => body[key])
+			.map((key) => {
+				return {
+					name: labels[data.indexOf(key)],
+					value: body[key],
+					inline: true,
+				}
+			})
+		// Add the transcription to the embed
+		fields.push({
+			name: 'Transcription',
+			value: transcription.text,
+			inline: false,
+		})
+		void axios.post(RECORDING_WEBHOOK, {
 			embeds: [
 				{
-					title: `New Hotline Confession`,
+					title: RECORDING_TITLE,
 					url,
-					fields: [
-						{
-							name: 'Number',
-							value: body.Caller,
-							inline: true,
-						},
-						{
-							name: 'City',
-							value: body.CallerCity,
-							inline: true,
-						},
-						{
-							name: 'State',
-							value: body.CallerState,
-							inline: true,
-						},
-						{
-							name: 'Zip',
-							value: body.CallerZip,
-							inline: true,
-						},
-						{
-							name: 'Country',
-							value: body.CallerCountry,
-							inline: true,
-						},
-						{
-							name: 'Duration',
-							value: `${body.RecordingDuration} seconds`,
-							inline: true,
-						},
-						{
-							name: 'Recording ID',
-							value: `${body.RecordingSid}`,
-							inline: true,
-						},
-						{
-							name: 'Transcription',
-							value: transcription.text,
-						},
-					],
+					fields,
 					footer: {
 						text: callId,
 					},
@@ -234,7 +234,19 @@ async function downloadRecording({ body }: Request) {
 	}
 }
 
-// listen on 3001 with SSL
-https.createServer(sslOptions, app).listen(SERVER_PORT, () => {
-	console.log(`Server listening on https://${SERVER_HOST}:${SERVER_PORT}`)
-})
+/**
+ * Listen on the appropriate port and protocol
+ */
+if (process.env.NODE_ENV === 'production' && SSL_ENABLED) {
+	const sslOptions = {
+		key: fs.readFileSync(privkeyPath),
+		cert: fs.readFileSync(fullchainPath),
+	}
+	https.createServer(sslOptions, app).listen(SERVER_PORT, () => {
+		console.log(`Server listening on https://${SERVER_HOST}:${SERVER_PORT}`)
+	})
+} else {
+	app.listen(SERVER_PORT, () => {
+		console.log(`Server listening on http://${SERVER_HOST}:${SERVER_PORT}`)
+	})
+}
