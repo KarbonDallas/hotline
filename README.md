@@ -67,3 +67,9 @@ We have provided a `.env.example` file that contains all of the parameters you n
 ## SSL Certificates
 
 If you don't already have your own SSL certificates, just use https://letsencrypt.org. They offer a tool called `certbot` which makes it super easy. More information here: https://certbot.eff.org/instructions
+
+Once you have your SSL certificate generated, do the following.
+
+1. Create an `ssl` directory in the root of the application directory
+1. Place `fullchain.pem` and `privkey.pem` inside.
+1. There is no step 3.
