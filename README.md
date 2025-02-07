@@ -53,10 +53,10 @@ Consider using a process manager such as [pm2](https://www.npmjs.com/package/pm2
 We have provided a `.env.example` file that contains all of the parameters you need to specify for operation. To get started just rename the file to `.env` and make the necessary edits. Here's a brief explanation:
 | Variable | Type | Description |
 |----------------------|-----------|------------------------------------------------------------------|
-| `ACCOUNT_SID` | string | Required for Twilio |
-| `AUTH_TOKEN` | string | Your Twilio auth token |
-| `SERVER_HOST` | string | Where this app runs |
-| `SERVER_PORT` | string | The port to listen on |
+| `ACCOUNT_SID` | string | Required for Twilio to operate the phone number |
+| `AUTH_TOKEN` | string | Your Twilio auth token, obtained in the [Twilio console](https://console.twilio.com/) |
+| `SERVER_HOST` | string | The address where our app runs |
+| `SERVER_PORT` | string | The port for our app to listen on |
 | `CALL_WEBHOOK` | string | Discord webhook for incoming call information |
 | `RECORDING_WEBHOOK` | string | Discord webhook for recording and transcription info |
 | `OPENAI_API_KEY` | string | Necessary for the transcriptions |
