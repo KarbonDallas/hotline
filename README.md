@@ -6,6 +6,8 @@ Let people send you voicemails from their phone to your Discord server!
 
 This is the application that powers the confession hotline for Midnight Chapel, hosted every Sunday by [Bizarre Miscreant](https://x.com/bizzrmiscreant) and [Karbon Dallas](https://x.com/KarbonDallas).
 
+You can call the hotline toll-free at 1-877-770-0071
+
 ## Features
 
 1. Receives incoming voice calls from any phone.
