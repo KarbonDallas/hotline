@@ -50,7 +50,7 @@ Consider using a process manager such as [pm2](https://www.npmjs.com/package/pm2
 
 ## Configuration
 
-We have provided a `.env.example` file that contains all of the parameters you need to specify for operation. Here's a brief explanation:
+We have provided a `.env.example` file that contains all of the parameters you need to specify for operation. To get started just rename the file to `.env` and make the necessary edits. Here's a brief explanation:
 | Variable | Type | Description |
 |----------------------|-----------|------------------------------------------------------------------|
 | `ACCOUNT_SID` | string | Required for Twilio |
