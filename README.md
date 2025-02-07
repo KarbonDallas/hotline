@@ -20,15 +20,15 @@ Here's how we accomplish the above features:
 
 ### Twilio
 
-We use Twilio to register the phone number that people can call. All we have to do is provide Twilio with the URL of the server hosting this application.
+We use [Twilio Voice API](https://www.twilio.com/en-us/voice) to register the phone number that people can call. All we have to do is provide Twilio with the URL of the server hosting this application.
 
 ### OpenAI
 
-We use OpenAI's whisper model to generate the transcription of the recording. It's surprisingly accurate and cheaper than Twilio's transcriptions.
+We use [OpenAI's whisper](https://openai.com/index/whisper/) model to generate the transcription of the recording. It's surprisingly accurate and cheaper than Twilio's transcriptions.
 
 ### Discord
 
-We make use of two separate webhooks: the first one posts incoming call data as soon as someone calls, and the second one posts a link to the audio recording along with the transcription. Both make use of Discord embeds for readability && convenience!
+We use simple [Discord webhooks](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) to post embeds. The first one posts incoming call data as soon as someone calls, and the second one posts a link to the audio recording along with the transcription. Both make use of Discord embeds for readability && convenience!
 
 ## Installation
 
